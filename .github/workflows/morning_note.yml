@@ -1,0 +1,41 @@
+name: Morning Note
+
+on:
+  schedule:
+    # Target: 07:00 CST daily on weekdays
+    # CDT (Mar–Nov): UTC-5  ->  13:00 UTC  (use cron below)
+    # CST (Nov–Mar): UTC-6  ->  13:00 UTC delivers 07:00 CST; no change needed
+    # Both standard and daylight time resolve to 13:00 UTC for 07:00 CST/CDT
+    # because CDT is UTC-5 and CST is UTC-6 — see README for full explanation.
+    - cron: "0 13 * * 1-5"   # Weekdays only; trading calendar check handles holidays
+  workflow_dispatch:           # Allows manual trigger from GitHub Actions UI for testing
+
+jobs:
+  run-morning-note:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run morning note
+        env:
+          RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL }}
+          SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NEWS_API_KEY: ${{ secrets.NEWS_API_KEY }}
+          GNEWS_API_KEY: ${{ secrets.GNEWS_API_KEY }}
+        run: |
+          python src/morning_note.py

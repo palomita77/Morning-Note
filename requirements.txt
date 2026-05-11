@@ -1,0 +1,6 @@
+yfinance==0.2.51
+pandas==2.2.3
+pandas-market-calendars==4.4.1
+requests==2.32.3
+anthropic==0.40.0
+# GNews and NewsAPI are accessed via the requests library above (REST APIs, no SDK needed)
