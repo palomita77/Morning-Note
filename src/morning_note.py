@@ -27,8 +27,14 @@ News sources (aggregated, deduplicated)
 
 Email delivery: Gmail SMTP via App Password
 """
-
 import os
+from dotenv import load_dotenv
+
+if os.path.exists(".env"):
+    load_dotenv()
+
+import time  
+
 import smtplib
 import logging
 from collections import defaultdict
@@ -631,6 +637,7 @@ def main() -> None:
     constituent_pm: dict[str, dict | None] = {}
     for constituent in constituent_to_etfs:
         constituent_pm[constituent] = get_premarket_change(constituent)
+        time.sleep(0.5)
         if constituent_pm[constituent]:
             log.info(
                 f"[Pre-mkt] {constituent}: "
