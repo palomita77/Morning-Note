@@ -2,12 +2,10 @@ name: Morning Note
 
 on:
   schedule:
-    # Target: 07:00 CST daily on weekdays
-    # CDT (Mar–Nov): UTC-5  ->  13:00 UTC  (use cron below)
-    # CST (Nov–Mar): UTC-6  ->  13:00 UTC delivers 07:00 CST; no change needed
-    # Both standard and daylight time resolve to 13:00 UTC for 07:00 CST/CDT
-    # because CDT is UTC-5 and CST is UTC-6 — see README for full explanation.
-    - cron: "0 13 * * 1-5"   # Weekdays only; trading calendar check handles holidays
+    # Target: 07:00 EST daily on weekdays
+    # EST (Nov–Mar): UTC-5  ->  12:00 UTC delivers 07:00 EST
+    # EDT (Mar–Nov): UTC-4  ->  12:00 UTC delivers 08:00 EDT (fires 1 hr late during DST)
+    - cron: "0 12 * * 1-5"   # Weekdays only; trading calendar check handles holidays
   workflow_dispatch:           # Allows manual trigger from GitHub Actions UI for testing
 
 env:

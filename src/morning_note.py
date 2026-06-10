@@ -1,7 +1,7 @@
 """
 Morning Note: ETF Holdings Movement Tracker
 ============================================
-Delivery:   7:00 AM CST on U.S. trading days via GitHub Actions (13:00 UTC CST / 12:00 UTC CDT)
+Delivery:   7:00 AM EST on U.S. trading days via GitHub Actions (12:00 UTC EST / 11:00 UTC EDT)
 
 Two signal layers
 -----------------
@@ -54,7 +54,7 @@ log = logging.getLogger(__name__)
 # Configuration
 # ---------------------------------------------------------------------------
 
-WATCHLIST = ["QQQ", "SMH", "DTCR", "IWY"]
+WATCHLIST = ["QQQ", "SMH", "DTCR", "SPY"]
 
 EOD_THRESHOLD       = 0.02   # 2%  ETF prior close-to-close
 PREMARKET_THRESHOLD = 0.01   # 1%  constituent pre-market vs. prior close
@@ -73,16 +73,16 @@ anthropic = Anthropic(api_key=ANTHROPIC_API_KEY)
 # Reference data — holdings and GICS
 # ---------------------------------------------------------------------------
 
-# Top constituents per ETF as of Q2 2025. Review quarterly.
+# Top constituents per ETF as of Q2 2026. Review quarterly.
 #   QQQ  -> invesco.com/qqq-etf
 #   SMH  -> vaneck.com/etf/SMH
-#   IWY  -> ishares.com (search IWY)
-#   DTCR -> check fund provider website
+#   SPY  -> ssga.com/us/en/institutional/etfs/funds/spdr-sp-500-etf-trust-spy
+#   DTCR -> globalxetfs.com/funds/dtcr
 FALLBACK_HOLDINGS: dict[str, list[str]] = {
-    "QQQ":  ["MSFT", "AAPL", "NVDA", "AMZN", "META", "GOOGL", "GOOG", "TSLA", "AVGO", "COST"],
-    "SMH":  ["NVDA", "TSM", "ASML", "AVGO", "TXN", "AMAT", "KLAC", "LRCX", "INTC", "MU"],
-    "IWY":  ["MSFT", "AAPL", "NVDA", "AMZN", "META", "GOOGL", "TSLA", "AVGO", "COST", "LLY"],
-    "DTCR": ["NET", "CRWD", "ZS", "PANW", "FTNT", "S", "CYBR", "OKTA", "TENB", "RPM"],
+    "QQQ":  ["NVDA", "AAPL", "MSFT", "AMZN", "GOOGL", "META", "GOOG", "AVGO", "TSLA", "COST"],
+    "SMH":  ["NVDA", "TSM", "MU", "AMD", "INTC", "AVGO", "QCOM", "TXN", "LRCX", "KLAC"],
+    "SPY":  ["AAPL", "MSFT", "NVDA", "AMZN", "META", "GOOGL", "GOOG", "BRK.B", "TSLA", "AVGO"],
+    "DTCR": ["EQIX", "DLR", "AMT", "CCI", "MRVL", "SBAC", "IRM", "VRT", "GDS", "VNET"],
 }
 
 # GICS sub-industry map for sympathy flagging.
@@ -602,7 +602,7 @@ def send_email(subject: str, html_body: str) -> None:
 
 def main() -> None:
     # GitHub Actions runs in UTC.
-    # Cron: 13:00 UTC = 07:00 CST (UTC-6) | 12:00 UTC = 07:00 CDT (UTC-5)
+    # Cron: 12:00 UTC = 07:00 EST (UTC-5) | 12:00 UTC = 08:00 EDT (UTC-4, fires 1 hr late)
     # See workflow YAML for seasonal cron adjustment.
     now_utc = datetime.utcnow()
 
