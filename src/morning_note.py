@@ -131,6 +131,24 @@ def get_prior_trading_day(date: datetime) -> datetime:
             return candidate
         candidate -= timedelta(days=1)
 
+SPLIT_THRESHOLD = 0.35  # abs(pct_change) above which we check for a split event
+
+def detect_split(ticker: str, as_of: datetime) -> float | None:
+    """Return the split ratio if yfinance records a split on or within 2 days of as_of, else None."""
+    try:
+        splits = yf.Ticker(ticker).splits
+        if splits.empty:
+            return None
+        for days_back in range(3):
+            check = (as_of - timedelta(days=days_back)).strftime("%Y-%m-%d")
+            mask  = splits.index.strftime("%Y-%m-%d") == check
+            if mask.any():
+                return float(splits[mask].iloc[-1])
+        return None
+    except Exception as exc:
+        log.warning(f"[Split] Check failed for {ticker}: {exc}")
+        return None
+
 # ---------------------------------------------------------------------------
 # EOD price data — Yahoo Finance
 # ---------------------------------------------------------------------------
@@ -275,7 +293,7 @@ def fetch_all_news(ticker: str, company: str) -> list[str]:
 CATALYST_TYPES = (
     "[Earnings], [Guidance Update], [M&A], [New Partnership], [Product Launch], "
     "[Macro/Sector], [Analyst Upgrade], [Analyst Downgrade], [Regulatory Filing], "
-    "[Sympathy Move], or [Unknown]"
+    "[Stock Split], [Sympathy Move], or [Unknown]"
 )
 
 
@@ -383,7 +401,21 @@ def format_mover_row(mover: dict) -> str:
         f'<span style="background:#eff6ff;color:#1d4ed8;font-size:10px;'
         f'padding:1px 5px;border-radius:3px;font-weight:700;margin-right:4px;">{label}</span>'
     )
-    catalyst = mover.get("catalyst", "[Unknown] No data available.")
+    catalyst     = mover.get("catalyst", "[Unknown] No data available.")
+    top_headline = mover.get("top_headline", "")
+    is_split     = mover.get("split_ratio") is not None
+
+    headline_html = (
+        f'<br><span style="color:#94a3b8;font-size:11px;font-style:italic;">'
+        f'&ldquo;{top_headline}&rdquo;</span>'
+        if top_headline else ""
+    )
+    split_badge = (
+        ' <span style="background:#f1f5f9;color:#475569;font-size:10px;'
+        'padding:1px 5px;border-radius:3px;font-weight:700;">SPLIT</span>'
+        if is_split else ""
+    )
+    move_color = "#64748b" if is_split else _color(pct)
 
     return f"""
     <tr>
@@ -399,13 +431,13 @@ def format_mover_row(mover: dict) -> str:
       </td>
       <td style="padding:10px 12px;border-bottom:1px solid #f1f5f9;
                  text-align:right;vertical-align:top;white-space:nowrap;">
-        <span style="color:{_color(pct)};font-weight:700;font-size:14px;">
+        <span style="color:{move_color};font-weight:700;font-size:14px;">
           {_arrow(pct)} {abs(pct)*100:.2f}%
-        </span>
+        </span>{split_badge}
       </td>
       <td style="padding:10px 12px;border-bottom:1px solid #f1f5f9;
                  color:#374151;font-size:12px;vertical-align:top;">
-        {catalyst}
+        {catalyst}{headline_html}
       </td>
     </tr>"""
 
@@ -686,14 +718,33 @@ def main() -> None:
 
         # Enrich each pre-market mover with company name, news, and catalyst
         for mover in pm_movers:
-            mover["company"]  = get_company_name(mover["ticker"])
-            headlines         = fetch_all_news(mover["ticker"], mover["company"])
-            mover["catalyst"] = classify_catalyst(
-                mover["ticker"],
-                mover["pct_change"],
-                headlines,
-                is_premarket=True,
-            )
+            mover["company"]      = get_company_name(mover["ticker"])
+            headlines             = fetch_all_news(mover["ticker"], mover["company"])
+            mover["top_headline"] = headlines[0] if headlines else ""
+
+            # Detect stock splits before calling Claude — avoids misclassifying
+            # a routine split as a large loss.
+            split_ratio = None
+            if abs(mover["pct_change"]) >= SPLIT_THRESHOLD:
+                split_ratio = detect_split(mover["ticker"], now_utc)
+
+            if split_ratio:
+                ratio_str          = (
+                    f"{int(split_ratio)}:1"
+                    if split_ratio == int(split_ratio) else f"{split_ratio}:1"
+                )
+                mover["split_ratio"] = split_ratio
+                mover["catalyst"]    = (
+                    f"[Stock Split {ratio_str}] Price reflects {ratio_str} share split; "
+                    f"not a fundamental move."
+                )
+            else:
+                mover["catalyst"] = classify_catalyst(
+                    mover["ticker"],
+                    mover["pct_change"],
+                    headlines,
+                    is_premarket=True,
+                )
 
         pm_movers = flag_sympathy(pm_movers)
 
