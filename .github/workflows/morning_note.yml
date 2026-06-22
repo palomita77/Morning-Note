@@ -2,10 +2,10 @@ name: Morning Note
 
 on:
   schedule:
-    # Target: 07:00 EST daily on weekdays
-    # EST (Nov–Mar): UTC-5  ->  12:00 UTC delivers 07:00 EST
-    # EDT (Mar–Nov): UTC-4  ->  12:00 UTC delivers 08:00 EDT (fires 1 hr late during DST)
-    - cron: "0 12 * * 1-5"   # Weekdays only; trading calendar check handles holidays
+    # Target: 03:00 EST scheduled; GitHub Actions delays ~5 hrs, delivering ~08:00 EST
+    # EST (Nov–Mar): UTC-5  ->  08:00 UTC = 03:00 EST scheduled
+    # EDT (Mar–Nov): UTC-4  ->  08:00 UTC = 04:00 EDT scheduled
+    - cron: "0 8 * * 1-5"    # Weekdays only; trading calendar check handles holidays
   workflow_dispatch:           # Allows manual trigger from GitHub Actions UI for testing
 
 env:

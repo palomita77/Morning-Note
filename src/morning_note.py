@@ -1,7 +1,7 @@
 """
 Morning Note: ETF Holdings Movement Tracker
 ============================================
-Delivery:   7:00 AM EST on U.S. trading days via GitHub Actions (12:00 UTC EST / 11:00 UTC EDT)
+Delivery:   ~8:00 AM EST on U.S. trading days via GitHub Actions (cron 08:00 UTC; ~5 hr GitHub delay)
 
 Two signal layers
 -----------------
@@ -602,7 +602,7 @@ def send_email(subject: str, html_body: str) -> None:
 
 def main() -> None:
     # GitHub Actions runs in UTC.
-    # Cron: 12:00 UTC = 07:00 EST (UTC-5) | 12:00 UTC = 08:00 EDT (UTC-4, fires 1 hr late)
+    # Cron: 08:00 UTC = 03:00 EST (UTC-5); GitHub ~5 hr delay targets ~08:00 EST actual delivery
     # See workflow YAML for seasonal cron adjustment.
     now_utc = datetime.utcnow()
 
