@@ -209,7 +209,7 @@ def get_premarket_change(ticker: str) -> dict | None:
         return None
 
 # ---------------------------------------------------------------------------
-# News aggregation — Yahoo Finance + NewsAPI + GNews
+# News aggregation — NewsAPI (CNBC, Reuters, MarketWatch, WSJ) + GNews + Yahoo Finance
 # ---------------------------------------------------------------------------
 
 def _yahoo_news(ticker: str) -> list[str]:
@@ -226,6 +226,8 @@ def _yahoo_news(ticker: str) -> list[str]:
         return []
 
 
+NEWS_DOMAINS = "cnbc.com,reuters.com,marketwatch.com,wsj.com"
+
 def _newsapi_headlines(ticker: str, company: str) -> list[str]:
     if not NEWS_API_KEY:
         return []
@@ -234,6 +236,7 @@ def _newsapi_headlines(ticker: str, company: str) -> list[str]:
             "https://newsapi.org/v2/everything",
             params={
                 "q":        f"{ticker} OR \"{company}\"",
+                "domains":  NEWS_DOMAINS,
                 "sortBy":   "publishedAt",
                 "pageSize": 5,
                 "language": "en",
