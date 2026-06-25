@@ -618,15 +618,16 @@ def build_email(
 # ---------------------------------------------------------------------------
 
 def send_email(subject: str, html_body: str) -> None:
+    recipients = [r.strip() for r in RECIPIENT_EMAIL.split(",") if r.strip()]
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
     msg["From"]    = SENDER_EMAIL
-    msg["To"]      = RECIPIENT_EMAIL
+    msg["To"]      = ", ".join(recipients)
     msg.attach(MIMEText(html_body, "html"))
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
         server.login(SENDER_EMAIL, GMAIL_APP_PASSWORD)
-        server.sendmail(SENDER_EMAIL, RECIPIENT_EMAIL, msg.as_string())
-    log.info(f"Email sent to {RECIPIENT_EMAIL}")
+        server.sendmail(SENDER_EMAIL, recipients, msg.as_string())
+    log.info(f"Email sent to {', '.join(recipients)}")
 
 # ---------------------------------------------------------------------------
 # Main orchestration
